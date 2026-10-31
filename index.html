@@ -440,9 +440,9 @@
         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Acesso restrito ao motorista</div>
       </div>
       
-      <input type="password" id="pinInput" class="lock-input" placeholder="••••••" maxlength="10" autofocus inputmode="numeric" onkeydown="if(event.key==='Enter') validarSenha();">
+      <input type="password" id="pinInput" class="lock-input" placeholder="••••••" maxlength="10" inputmode="numeric">
       
-      <button type="button" class="btn btn-gold" onclick="validarSenha()">Entrar</button>
+      <button type="button" id="btnEntrar" class="btn btn-gold">Entrar</button>
       <div id="lockError" style="font-size: 0.75rem; color: #ef4444; display: none;">Senha incorreta. Tente novamente.</div>
     </div>
   </div>
@@ -464,10 +464,10 @@
     <div class="card" id="importBox">
       <div class="card-title">
         <span>Nova Solicitação</span>
-        <button class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.7rem;" onclick="carregarExemplo()">Exemplo</button>
+        <button type="button" class="btn btn-secondary" style="width: auto; padding: 4px 10px; font-size: 0.7rem;" onclick="carregarExemplo()">Exemplo</button>
       </div>
       <textarea id="rawMessage" placeholder="Cole aqui a mensagem recebida pelo WhatsApp..."></textarea>
-      <button class="btn btn-gold" onclick="processarTexto()">Processar Mensagem</button>
+      <button type="button" class="btn btn-gold" onclick="processarTexto()">Processar Mensagem</button>
     </div>
 
     <!-- FORMULÁRIO DE CONFIRMAÇÃO EDITÁVEL -->
@@ -531,8 +531,8 @@
       </div>
 
       <div style="display: flex; gap: 8px;">
-        <button class="btn btn-secondary" onclick="cancelarRevisao()">Cancelar</button>
-        <button class="btn btn-gold" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
+        <button type="button" class="btn btn-secondary" onclick="cancelarRevisao()">Cancelar</button>
+        <button type="button" class="btn btn-gold" onclick="confirmarAgendamento()">Confirmar Agendamento</button>
       </div>
     </div>
 
@@ -557,34 +557,63 @@
       
       <div id="navModalOptions" style="display: flex; flex-direction: column; gap: 8px;"></div>
 
-      <button class="btn btn-secondary" style="margin-top: 6px;" onclick="fecharModalNav()">Fechar</button>
+      <button type="button" class="btn btn-secondary" style="margin-top: 6px;" onclick="fecharModalNav()">Fechar</button>
     </div>
   </div>
 
   <script>
-    // Senha fixa e imutável definida pelo proprietário
     const SENHA_MESTRA = "191215";
 
-    function validarSenha() {
-      const pinDigitado = (document.getElementById('pinInput').value || '').trim();
+    function desbloquearApp() {
+      const lockEl = document.getElementById('lockScreen');
+      const appEl = document.getElementById('mainApp');
+      if (lockEl) lockEl.style.display = 'none';
+      if (appEl) appEl.style.display = 'flex';
+      renderTrips();
+    }
 
-      if (pinDigitado === SENHA_MESTRA) {
+    function validarSenha() {
+      const inputEl = document.getElementById('pinInput');
+      const errEl = document.getElementById('lockError');
+      const digitado = (inputEl ? inputEl.value : '').trim();
+
+      if (digitado === SENHA_MESTRA) {
+        if (errEl) errEl.style.display = 'none';
         sessionStorage.setItem('ramos_auth', 'true');
-        document.getElementById('lockScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'flex';
-        renderTrips();
+        desbloquearApp();
       } else {
-        document.getElementById('lockError').style.display = 'block';
-        document.getElementById('pinInput').value = '';
+        if (errEl) errEl.style.display = 'block';
+        if (inputEl) {
+          inputEl.value = '';
+          inputEl.focus();
+        }
       }
     }
 
-    // Verifica se já estava desbloqueado nesta sessão
-    window.addEventListener('DOMContentLoaded', function() {
+    // Vincula os eventos assim que o DOM estiver carregado
+    document.addEventListener('DOMContentLoaded', function() {
+      const btn = document.getElementById('btnEntrar');
+      const pin = document.getElementById('pinInput');
+
+      if (btn) {
+        btn.addEventListener('click', validarSenha);
+        btn.addEventListener('touchend', function(e) {
+          e.preventDefault();
+          validarSenha();
+        });
+      }
+
+      if (pin) {
+        pin.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            validarSenha();
+          }
+        });
+      }
+
       if (sessionStorage.getItem('ramos_auth') === 'true') {
-        document.getElementById('lockScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'flex';
-        renderTrips();
+        desbloquearApp();
       }
     });
 
@@ -659,16 +688,4 @@ _Aguardo a confirmação e orçamento._`;
       let parada1 = findValue(['parada 1', 'parada 01', 'primeira parada', 'parada']);
       let parada2 = findValue(['parada 2', 'parada 02', 'segunda parada']);
       let parada3 = findValue(['parada 3', 'parada 03', 'terceira parada']);
-      let destino = findValue(['destino', 'desembarque', 'chegada']);
-
-      let passageiros = findValue(['passageiros', 'qtd passageiros', 'pessoas']) || '1';
-      let bagagem = findValue(['bagagem', 'malas']) || 'Não informada';
-
-      origem = origem.replace(/^(origem|embarque)\s*[:：\-]?\s*/i, '');
-      destino = destino.replace(/^(destino|desembarque)\s*[:：\-]?\s*/i, '');
-
-      document.getElementById('resPassageiro').value = passageiro;
-      document.getElementById('resContato').value = contato;
-      document.getElementById('resData').value = data;
-      document.getElementById('resHorario').value = horario;
-      document.getElementB
+      let destino = findValue([

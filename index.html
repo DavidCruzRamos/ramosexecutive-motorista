@@ -2,10 +2,10 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Ramos Executive | Painel do Motorista</title>
   
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=2">
   <link rel="icon" type="image/jpeg" href="IMG-20260726-WA0142.jpg">
   <link rel="shortcut icon" href="IMG-20260726-WA0142.jpg">
   <link rel="apple-touch-icon" href="IMG-20260726-WA0142.jpg">
@@ -61,31 +61,34 @@
       gap: 18px;
     }
 
-    /* Ecrã de Bloqueio */
-    #lockOverlay {
+    /* TELA DE BLOQUEIO / PIN */
+    #lockScreen {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
       background: #08090b;
-      z-index: 999999;
+      z-index: 99999;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
+      padding: 20px;
     }
 
     .lock-box {
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 30px 20px;
+      padding: 32px 20px;
       width: 100%;
-      max-width: 360px;
+      max-width: 340px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 16px;
+      gap: 18px;
       text-align: center;
-      box-shadow: 0 10px 35px rgba(0,0,0,0.9);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.9);
     }
 
     .lock-logo {
@@ -108,12 +111,16 @@
       background: #0b0c0f;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 12px;
+      padding: 14px;
       text-align: center;
-      font-size: 1.3rem;
-      letter-spacing: 6px;
+      font-size: 1.5rem;
+      letter-spacing: 8px;
       color: #fff;
       outline: none;
+    }
+
+    .lock-input:focus {
+      border-color: var(--gold);
     }
 
     .header {
@@ -424,8 +431,8 @@
 </head>
 <body>
 
-  <!-- ECRÃ DE BLOQUEIO / SENHA FIXA -->
-  <div id="lockOverlay">
+  <!-- TELA DE BLOQUEIO / PIN FIXO 191215 -->
+  <div id="lockScreen">
     <div class="lock-box">
       <img src="IMG-20260726-WA0142.jpg" class="lock-logo" alt="Logo">
       <div>
@@ -433,14 +440,15 @@
         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Acesso restrito ao motorista</div>
       </div>
       
-      <input type="password" id="pinInput" class="lock-input" placeholder="••••••" maxlength="10" inputmode="numeric" onkeydown="if(event.key==='Enter') verificarAcesso();">
+      <!-- inputmode="numeric" abre teclado numérico direto, oninput valida sozinho ao digitar os 6 dígitos -->
+      <input type="password" id="pinInput" class="lock-input" placeholder="••••••" maxlength="6" inputmode="numeric" oninput="checarPinAutomatico(this.value)">
       
-      <button type="button" class="btn btn-gold" onclick="verificarAcesso()">Entrar</button>
-      <div id="lockError" style="font-size: 0.75rem; color: #ef4444; display: none;">Senha incorreta. Tente novamente.</div>
+      <button type="button" class="btn btn-gold" onclick="validarPinManual()">Entrar</button>
+      <div id="lockError" style="font-size: 0.78rem; color: #ef4444; display: none; font-weight: 600;">Senha incorreta. Tente novamente.</div>
     </div>
   </div>
 
-  <div class="app-container" id="mainApp">
+  <div class="app-container" id="mainApp" style="display: none;">
 
     <div class="header">
       <div>
@@ -555,40 +563,47 @@
   </div>
 
   <script>
-    // Senha fixa e definitiva
     var SENHA_MESTRA = "191215";
 
-    function verificarAcesso() {
-      var pinField = document.getElementById('pinInput');
-      var val = (pinField ? pinField.value : '').trim();
+    function liberarPainel() {
+      var lock = document.getElementById('lockScreen');
+      var app = document.getElementById('mainApp');
+      if (lock) lock.style.setProperty('display', 'none', 'important');
+      if (app) app.style.setProperty('display', 'flex', 'important');
+      renderTrips();
+    }
 
-      if (val === SENHA_MESTRA) {
-        var overlay = document.getElementById('lockOverlay');
-        if (overlay) {
-          overlay.remove(); // Remove o overlay diretamente da página
-        }
-        try {
-          sessionStorage.setItem('ramos_auth', 'true');
-        } catch(e) {}
-        renderTrips();
-      } else {
-        var err = document.getElementById('lockError');
-        if (err) err.style.display = 'block';
-        alert('Senha incorreta.');
-        if (pinField) {
-          pinField.value = '';
-          pinField.focus();
+    function checarPinAutomatico(valor) {
+      var val = (valor || '').trim();
+      var err = document.getElementById('lockError');
+      if (err) err.style.display = 'none';
+
+      // Assim que atinge 6 dígitos, valida automaticamente
+      if (val.length === 6) {
+        if (val === SENHA_MESTRA) {
+          liberarPainel();
+        } else {
+          if (err) err.style.display = 'block';
+          document.getElementById('pinInput').value = '';
         }
       }
     }
 
-    // Se já autenticou na sessão, remove o ecrã de imediato
-    if (sessionStorage.getItem('ramos_auth') === 'true') {
-      var ov = document.getElementById('lockOverlay');
-      if (ov) ov.remove();
+    function validarPinManual() {
+      var pinField = document.getElementById('pinInput');
+      var val = (pinField ? pinField.value : '').trim();
+      var err = document.getElementById('lockError');
+
+      if (val === SENHA_MESTRA) {
+        if (err) err.style.display = 'none';
+        liberarPainel();
+      } else {
+        if (err) err.style.display = 'block';
+        if (pinField) pinField.value = '';
+      }
     }
 
-    // Funções Operacionais
+    // Funções Operacionais do App
     function carregarExemplo() {
       document.getElementById('rawMessage').value = `✦ *SOLICITACAO DE TRANSFER — RAMOS EXECUTIVE* ✦
 _Mobilidade com Elegancia_
@@ -659,14 +674,4 @@ _Aguardo a confirmação e orçamento._`;
       var parada3 = findValue(['parada 3', 'parada 03', 'terceira parada']);
       var destino = findValue(['destino', 'desembarque', 'chegada']);
 
-      var passageiros = findValue(['passageiros', 'qtd passageiros', 'pessoas']) || '1';
-      var bagagem = findValue(['bagagem', 'malas']) || 'Não informada';
-
-      origem = origem.replace(/^(origem|embarque)\s*[:：\-]?\s*/i, '');
-      destino = destino.replace(/^(destino|desembarque)\s*[:：\-]?\s*/i, '');
-
-      document.getElementById('resPassageiro').value = passageiro;
-      document.getElementById('resContato').value = contato;
-      document.getElementById('resData').value = data;
-      document.getElementById('resHorario').value = horario;
-      document.getElement
+      var pass

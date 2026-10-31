@@ -1,16 +1,18 @@
 {
+  "id": "/ramosexecutive-motorista/",
   "name": "Ramos Executive - Motorista",
   "short_name": "Motorista",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#08090b",
   "theme_color": "#c5a059",
   "icons": [
     {
       "src": "./IMG-20260726-WA0146.jpg",
-      "sizes": "192x192 512x512",
+      "sizes": "512x512",
       "type": "image/jpeg",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }

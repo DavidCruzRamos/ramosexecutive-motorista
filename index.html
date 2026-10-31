@@ -523,6 +523,13 @@ _Aguardo a confirmacao e orcamento._`;
     }
 
     renderTrips();
+
+    // Registro do Service Worker para habilitar instalação como App nativo
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
   </script>
 </body>
 </html>

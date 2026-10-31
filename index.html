@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ramos Executive | Painel do Motorista</title>
   
-  <!-- Manifesto e Ícones Oficiais -->
+  <!-- Manifesto e Ícones -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/jpeg" href="IMG-20260726-WA0146.jpg">
+  <link rel="shortcut icon" href="IMG-20260726-WA0146.jpg">
   <link rel="apple-touch-icon" href="IMG-20260726-WA0146.jpg">
   <meta name="theme-color" content="#c5a059">
   <meta name="mobile-web-app-capable" content="yes">
@@ -523,13 +524,6 @@ _Aguardo a confirmacao e orcamento._`;
     }
 
     renderTrips();
-
-    // Registro do Service Worker para habilitar instalação como App nativo
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(() => {});
-      });
-    }
   </script>
 </body>
 </html>

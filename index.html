@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ramos Executive | Painel do Motorista</title>
   
-  <!-- Manifesto e Ícones Oficiais (WA0142) -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/jpeg" href="IMG-20260726-WA0142.jpg">
   <link rel="shortcut icon" href="IMG-20260726-WA0142.jpg">
@@ -150,6 +149,21 @@
       border-color: var(--gold);
     }
 
+    .input-field {
+      width: 100%;
+      background: #0b0c0f;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 8px 10px;
+      color: var(--text);
+      font-size: 0.84rem;
+      outline: none;
+    }
+
+    .input-field:focus {
+      border-color: var(--gold);
+    }
+
     .btn {
       display: flex;
       align-items: center;
@@ -195,7 +209,7 @@
     .field-item {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
     }
 
     .field-item.full {
@@ -207,13 +221,6 @@
       text-transform: uppercase;
       letter-spacing: 0.8px;
       color: var(--text-muted);
-    }
-
-    .field-value {
-      font-size: 0.84rem;
-      color: #fff;
-      font-weight: 500;
-      word-break: break-word;
     }
 
     .input-price {
@@ -315,46 +322,49 @@
       <button class="btn btn-gold" onclick="processarTexto()">Processar Mensagem</button>
     </div>
 
-    <!-- FORMULÁRIO DE CONFIRMAÇÃO -->
+    <!-- FORMULÁRIO DE CONFIRMAÇÃO EDITÁVEL -->
     <div class="card" id="formReview" style="display: none;">
-      <div class="card-title">Dados Extraídos</div>
+      <div class="card-title">
+        <span>Dados Extraídos</span>
+        <span style="font-size: 0.68rem; color: var(--text-muted); text-transform: none;">Pode editar antes de confirmar</span>
+      </div>
       <div class="review-grid">
         <div class="field-item">
-          <span class="field-label">Passageiro</span>
-          <span class="field-value" id="resPassageiro">-</span>
+          <label class="field-label" for="resPassageiro">Passageiro</label>
+          <input type="text" id="resPassageiro" class="input-field">
         </div>
         <div class="field-item">
-          <span class="field-label">Contato</span>
-          <span class="field-value" id="resContato">-</span>
+          <label class="field-label" for="resContato">Contato</label>
+          <input type="text" id="resContato" class="input-field" placeholder="(31) 9....">
         </div>
         <div class="field-item">
-          <span class="field-label">Data</span>
-          <span class="field-value" id="resData">-</span>
+          <label class="field-label" for="resData">Data</label>
+          <input type="text" id="resData" class="input-field" placeholder="DD/MM/AAAA">
         </div>
         <div class="field-item">
-          <span class="field-label">Horário</span>
-          <span class="field-value" id="resHorario">-</span>
+          <label class="field-label" for="resHorario">Horário</label>
+          <input type="text" id="resHorario" class="input-field" placeholder="00:00">
         </div>
         <div class="field-item full">
-          <span class="field-label">Embarque (Origem)</span>
-          <span class="field-value" id="resOrigem">-</span>
+          <label class="field-label" for="resOrigem">Embarque (Origem)</label>
+          <input type="text" id="resOrigem" class="input-field">
         </div>
         <div class="field-item full">
-          <span class="field-label">Desembarque (Destino)</span>
-          <span class="field-value" id="resDestino">-</span>
+          <label class="field-label" for="resDestino">Desembarque (Destino)</label>
+          <input type="text" id="resDestino" class="input-field">
         </div>
         <div class="field-item">
-          <span class="field-label">Bagagem</span>
-          <span class="field-value" id="resBagagem">-</span>
+          <label class="field-label" for="resBagagem">Bagagem</label>
+          <input type="text" id="resBagagem" class="input-field">
         </div>
         <div class="field-item">
-          <span class="field-label">Passageiros</span>
-          <span class="field-value" id="resQtd">-</span>
+          <label class="field-label" for="resQtd">Passageiros</label>
+          <input type="text" id="resQtd" class="input-field">
         </div>
       </div>
 
       <div class="field-item">
-        <span class="field-label">Valor do Orçamento (R$)</span>
+        <label class="field-label" for="inputValor">Valor do Orçamento (R$)</label>
         <input type="text" id="inputValor" class="input-price" value="R$ 180,00" placeholder="R$ 0,00">
       </div>
 
@@ -375,8 +385,6 @@
   </div>
 
   <script>
-    let tempTrip = null;
-
     function carregarExemplo() {
       document.getElementById('rawMessage').value = `✦ *SOLICITACAO DE TRANSFER — RAMOS EXECUTIVE* ✦
 _Mobilidade com Elegancia_
@@ -398,78 +406,84 @@ _Aguardo a confirmação e orçamento._`;
     }
 
     function processarTexto() {
-      const txt = document.getElementById('rawMessage').value;
-      if (!txt.trim()) return alert('Por favor, cole a mensagem primeiro.');
+      const raw = document.getElementById('rawMessage').value;
+      if (!raw.trim()) return alert('Por favor, cole a mensagem primeiro.');
 
-      const extrair = (padrao) => {
-        const match = txt.match(padrao);
-        return match && match[1] ? match[1].replace(/[*_~]/g, '').trim() : '';
+      const clean = (s) => (s || '').replace(/[*_~`]/g, '').trim();
+
+      const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+      const findAfter = (prefixes) => {
+        for (const line of lines) {
+          for (const p of prefixes) {
+            const re = new RegExp(`^[^a-zA-Z0-9]*${p}\\s*[:：\\-]?\\s*(.*)$`, 'i');
+            const m = line.match(re);
+            if (m && m[1]) return clean(m[1]);
+          }
+        }
+        return '';
       };
 
-      const passageiro = extrair(/(?:👤|passageiro[:*]?)\s*\*?([^\n\r]+)/i) || 'Não informado';
-      
-      let contato = extrair(/(?:📱|contato|telefone|celular|whatsapp)[:*]?\s*\*?([^\n\r]+)/i);
+      let passageiro = findAfter(['passageiro', 'cliente', 'nome']) || 'Não informado';
+
+      let contato = findAfter(['contato', 'telefone', 'celular', 'whatsapp', 'fone', 'tel']);
       if (!contato) {
-        const numMatch = txt.match(/\(?\b\d{2}\)?\s*9?\d{4}[-\s]?\d{4}\b/);
-        contato = numMatch ? numMatch[0] : '';
+        const phoneMatch = raw.match(/(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?9?\d{4}[-\s]?\d{4}/);
+        contato = phoneMatch ? clean(phoneMatch[0]) : '';
       }
 
-      let data = extrair(/(?:📅|data)[:*]?\s*\*?([^\n\r]+)/i);
+      let data = findAfter(['data', 'dia']);
       if (!data) {
-        const dataMatch = txt.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
-        data = dataMatch ? dataMatch[0] : '';
+        const dateMatch = raw.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
+        data = dateMatch ? dateMatch[0] : '';
       }
 
-      let horario = extrair(/(?:⏰|hor[aá]rio)[:*]?\s*\*?([^\n\r]+)/i);
+      let horario = findAfter(['hor[aá]rio', 'hora', 'hor']);
       if (!horario) {
-        const horaMatch = txt.match(/\b\d{1,2}:\d{2}\b/);
-        horario = horaMatch ? horaMatch[0] : '';
+        const timeMatch = raw.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+        horario = timeMatch ? `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}` : '';
       }
 
-      const origem = extrair(/(?:📍|origem)[:*]?\s*\*?([^\n\r]+)/i);
-      const destino = extrair(/(?:🏁|destino)[:*]?\s*\*?([^\n\r]+)/i);
-      const voo = extrair(/(?:✈️|voo)[:*]?\s*\*?([^\n\r]+)/i) || 'Não informado';
-      const passageiros = extrair(/(?:👥|passageiros)[:*]?\s*\*?([^\n\r]+)/i) || '1';
-      const bagagem = extrair(/(?:🧳|bagagem)[:*]?\s*\*?([^\n\r]+)/i) || 'Não informada';
+      let origem = findAfter(['origem', 'embarque', 'partida']);
+      let destino = findAfter(['destino', 'desembarque', 'chegada']);
+      let voo = findAfter(['voo', 'n[uú]mero do voo']) || 'Não informado';
+      let passageiros = findAfter(['passageiros', 'qtd passageiros', 'pessoas']) || '1';
+      let bagagem = findAfter(['bagagem', 'malas']) || 'Não informada';
 
-      tempTrip = {
-        id: Date.now(),
-        passageiro,
-        contato,
-        data,
-        horario,
-        origem,
-        destino,
-        voo,
-        passageiros,
-        bagagem
-      };
-
-      document.getElementById('resPassageiro').innerText = tempTrip.passageiro || '-';
-      document.getElementById('resContato').innerText = tempTrip.contato || '-';
-      document.getElementById('resData').innerText = tempTrip.data || '-';
-      document.getElementById('resHorario').innerText = tempTrip.horario || '-';
-      document.getElementById('resOrigem').innerText = tempTrip.origem || '-';
-      document.getElementById('resDestino').innerText = tempTrip.destino || '-';
-      document.getElementById('resBagagem').innerText = tempTrip.bagagem || '-';
-      document.getElementById('resQtd').innerText = tempTrip.passageiros || '-';
+      document.getElementById('resPassageiro').value = passageiro;
+      document.getElementById('resContato').value = contato;
+      document.getElementById('resData').value = data;
+      document.getElementById('resHorario').value = horario;
+      document.getElementById('resOrigem').value = origem;
+      document.getElementById('resDestino').value = destino;
+      document.getElementById('resBagagem').value = bagagem;
+      document.getElementById('resQtd').value = passageiros;
 
       document.getElementById('importBox').style.display = 'none';
       document.getElementById('formReview').style.display = 'flex';
     }
 
     function cancelarRevisao() {
-      tempTrip = null;
       document.getElementById('formReview').style.display = 'none';
       document.getElementById('importBox').style.display = 'flex';
     }
 
     function confirmarAgendamento() {
-      if (!tempTrip) return;
-      tempTrip.valor = document.getElementById('inputValor').value || 'A combinar';
+      const trip = {
+        id: Date.now(),
+        passageiro: document.getElementById('resPassageiro').value.trim() || 'Não informado',
+        contato: document.getElementById('resContato').value.trim(),
+        data: document.getElementById('resData').value.trim(),
+        horario: document.getElementById('resHorario').value.trim(),
+        origem: document.getElementById('resOrigem').value.trim(),
+        destino: document.getElementById('resDestino').value.trim(),
+        bagagem: document.getElementById('resBagagem').value.trim(),
+        passageiros: document.getElementById('resQtd').value.trim(),
+        valor: document.getElementById('inputValor').value.trim() || 'A combinar'
+      };
 
       const trips = JSON.parse(localStorage.getItem('ramos_trips') || '[]');
-      trips.unshift(tempTrip);
+      trips.unshift(trip);
       localStorage.setItem('ramos_trips', JSON.stringify(trips));
 
       document.getElementById('rawMessage').value = '';
@@ -480,7 +494,7 @@ _Aguardo a confirmação e orçamento._`;
     function renderTrips() {
       const trips = JSON.parse(localStorage.getItem('ramos_trips') || '[]');
       const container = document.getElementById('tripsList');
-      document.getElementById('totalTrips').innerText = `${trips.length} agendamento(s)`;
+      document.getElementById('totalTrips').innerText = `${trips.length} agendamento(s)`[span_0](start_span)[span_0](end_span);
 
       if (trips.length === 0) {
         container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 24px;">Nenhum agendamento registado ainda.</div>`;
@@ -512,8 +526,8 @@ _Aguardo a confirmação e orçamento._`;
             </div>
 
             <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px;">
-              <div>🟢 <span style="color: var(--text-muted);">Origem:</span> ${t.origem}</div>
-              <div>🔴 <span style="color: var(--text-muted);">Destino:</span> ${t.destino}</div>
+              <div>🟢 <span style="color: var(--text-muted);">Origem:</span> ${t.origem || 'Não informada'}</div>
+              <div>🔴 <span style="color: var(--text-muted);">Destino:</span> ${t.destino || 'Não informado'}</div>
             </div>
 
             <div class="nav-buttons">
@@ -523,7 +537,7 @@ _Aguardo a confirmação e orçamento._`;
 
             <div class="action-row">
               <a href="${telLimpo ? 'https://wa.me/55' + telLimpo + '?text=' + msgWhats : '#'}" ${telLimpo ? 'target="_blank"' : 'onclick="alert(\'Telefone não cadastrado\')"' } class="btn btn-whatsapp">WhatsApp</a>
-              <button class="btn btn-agenda" onclick="criarEventoAgenda('${t.passageiro}', '${t.origem}', '${t.data}', '${t.horario}', '${t.destino}')">Agenda</button>
+              <button class="btn btn-agenda" onclick="criarEventoAgenda('${t.passageiro.replace(/'/g, "\\'")}', '${(t.origem || '').replace(/'/g, "\\'")}', '${t.data}', '${t.horario}', '${(t.destino || '').replace(/'/g, "\\'")}')">Agenda</button>
               <button class="btn btn-del" onclick="removerViagem(${t.id})">✕</button>
             </div>
           </div>
@@ -540,24 +554,32 @@ _Aguardo a confirmação e orçamento._`;
     }
 
     function criarEventoAgenda(passageiro, origem, data, horario, destino) {
-      if (!data || !horario || !data.includes('/') || !horario.includes(':')) {
-        return alert('Data ou horário incompletos para envio à Agenda.');
+      if (!data || !horario) {
+        return alert('Data ou horário não definidos para este agendamento.');
       }
 
-      const [dia, mes, ano] = data.split('/');
-      const [h, m] = horario.split(':');
-      
-      const anoCompleto = ano.length === 2 ? '20' + ano : ano;
-      const dataObj = new Date(parseInt(anoCompleto, 10), parseInt(mes, 10) - 1, parseInt(dia, 10), parseInt(h, 10), parseInt(m, 10));
-      
-      if (isNaN(dataObj.getTime())) {
+      const pData = data.split('/');
+      const pTempo = horario.replace('h', ':').split(':');
+
+      if (pData.length !== 3 || pTempo.length < 2) {
+        return alert('Formato de data ou hora inválido. Formato esperado: DD/MM/AAAA e HH:MM.');
+      }
+
+      let dia = parseInt(pData[0], 10);
+      let mes = parseInt(pData[1], 10) - 1;
+      let ano = parseInt(pData[2].length === 2 ? '20' + pData[2] : pData[2], 10);
+      let hora = parseInt(pTempo[0], 10);
+      let minuto = parseInt(pTempo[1], 10);
+
+      const dInicio = new Date(ano, mes, dia, hora, minuto);
+      if (isNaN(dInicio.getTime())) {
         return alert('Data ou horário inválidos.');
       }
 
-      const dataFim = new Date(dataObj.getTime() + 60 * 60 * 1000);
-      const fDate = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
-      
-      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Transfer: ' + passageiro)}&dates=${fDate(dataObj)}/${fDate(dataFim)}&details=${encodeURIComponent('Destino: ' + destino)}&location=${encodeURIComponent(origem)}`;
+      const dFim = new Date(dInicio.getTime() + 60 * 60 * 1000);
+      const fDate = (d) => d.toISOString().replace(/[-:]/g, "").split('.')[0] + "Z";
+
+      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Transfer: ' + passageiro)}&dates=${fDate(dInicio)}/${fDate(dFim)}&details=${encodeURIComponent('Destino: ' + destino)}&location=${encodeURIComponent(origem)}`;
       window.open(calUrl, '_blank');
     }
 

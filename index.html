@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ramos Executive | Painel do Motorista</title>
   
-  <!-- Manifesto e Ícones Oficiais Absolutos -->
-  <link rel="manifest" href="/ramosexecutive-motorista/manifest.json">
-  <link rel="icon" type="image/jpeg" href="/ramosexecutive-motorista/IMG-20260726-WA0142.jpg">
-  <link rel="shortcut icon" href="/ramosexecutive-motorista/IMG-20260726-WA0142.jpg">
-  <link rel="apple-touch-icon" href="/ramosexecutive-motorista/IMG-20260726-WA0142.jpg">
+  <!-- Manifesto e Ícones Oficiais (WA0142) -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" href="IMG-20260726-WA0142.jpg">
+  <link rel="shortcut icon" href="IMG-20260726-WA0142.jpg">
+  <link rel="apple-touch-icon" href="IMG-20260726-WA0142.jpg">
   <meta name="theme-color" content="#c5a059">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -381,49 +381,78 @@
       document.getElementById('rawMessage').value = `✦ *SOLICITACAO DE TRANSFER — RAMOS EXECUTIVE* ✦
 _Mobilidade com Elegancia_
 
-👤 *Passageiro:* Tatiane
+👤 *Passageiro:* Camila Altamira Ernesto
 📱 *Contato:* (31) 98115-7372
-📅 *Data:* 30/10/2026
-⏰ *Horario:* 07:39
+📅 *Data:* 31/10/2026
+⏰ *Horário:* 07:30
 
-📍 *Origem:* Rua Portugal, 625 Nascoes unidas
-🏁 *Destino:* Messias Floriano Borges 60
-✈️ *Voo:* Nao informado
-👥 *Passageiros:* 1 Passageiro
+📍 *Origem:* R Geraldo Teixeira da Costa, 1049
+🏁 *Destino:* Aeroporto Confins
+✈️ *Voo:* Não informado
+👥 *Passageiros:* 2 Passageiros
 🧳 *Bagagem:* 1 a 2 malas grandes
 
-💬 *Observacoes:* Nenhuma
+💬 *Observações:* Nenhuma
 
-_Aguardo a confirmacao e orcamento._`;
+_Aguardo a confirmação e orçamento._`;
     }
 
     function processarTexto() {
       const txt = document.getElementById('rawMessage').value;
       if (!txt.trim()) return alert('Por favor, cole a mensagem primeiro.');
 
-      const get = (re) => (txt.match(re) || [])[1]?.trim() || '';
+      const extrair = (padrao) => {
+        const match = txt.match(padrao);
+        return match && match[1] ? match[1].replace(/[*_~]/g, '').trim() : '';
+      };
+
+      const passageiro = extrair(/(?:👤|passageiro[:*]?)\s*\*?([^\n\r]+)/i) || 'Não informado';
+      
+      let contato = extrair(/(?:📱|contato|telefone|celular|whatsapp)[:*]?\s*\*?([^\n\r]+)/i);
+      if (!contato) {
+        const numMatch = txt.match(/\(?\b\d{2}\)?\s*9?\d{4}[-\s]?\d{4}\b/);
+        contato = numMatch ? numMatch[0] : '';
+      }
+
+      let data = extrair(/(?:📅|data)[:*]?\s*\*?([^\n\r]+)/i);
+      if (!data) {
+        const dataMatch = txt.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
+        data = dataMatch ? dataMatch[0] : '';
+      }
+
+      let horario = extrair(/(?:⏰|hor[aá]rio)[:*]?\s*\*?([^\n\r]+)/i);
+      if (!horario) {
+        const horaMatch = txt.match(/\b\d{1,2}:\d{2}\b/);
+        horario = horaMatch ? horaMatch[0] : '';
+      }
+
+      const origem = extrair(/(?:📍|origem)[:*]?\s*\*?([^\n\r]+)/i);
+      const destino = extrair(/(?:🏁|destino)[:*]?\s*\*?([^\n\r]+)/i);
+      const voo = extrair(/(?:✈️|voo)[:*]?\s*\*?([^\n\r]+)/i) || 'Não informado';
+      const passageiros = extrair(/(?:👥|passageiros)[:*]?\s*\*?([^\n\r]+)/i) || '1';
+      const bagagem = extrair(/(?:🧳|bagagem)[:*]?\s*\*?([^\n\r]+)/i) || 'Não informada';
 
       tempTrip = {
         id: Date.now(),
-        passageiro: get(/👤\s*\*?Passageiro:\*?\s*([^\n\r]+)/i) || 'Não informado',
-        contato: get(/📱\s*\*?Contato:\*?\s*([^\n\r]+)/i) || '',
-        data: get(/📅\s*\*?Data:\*?\s*([^\n\r]+)/i) || '',
-        horario: get(/⏰\s*\*?Horario:\*?\s*([^\n\r]+)/i) || '',
-        origem: get(/📍\s*\*?Origem:\*?\s*([^\n\r]+)/i) || '',
-        destino: get(/🏁\s*\*?Destino:\*?\s*([^\n\r]+)/i) || '',
-        voo: get(/✈️\s*\*?Voo:\*?\s*([^\n\r]+)/i) || 'Não informado',
-        passageiros: get(/👥\s*\*?Passageiros:\*?\s*([^\n\r]+)/i) || '1',
-        bagagem: get(/🧳\s*\*?Bagagem:\*?\s*([^\n\r]+)/i) || 'Não informada'
+        passageiro,
+        contato,
+        data,
+        horario,
+        origem,
+        destino,
+        voo,
+        passageiros,
+        bagagem
       };
 
-      document.getElementById('resPassageiro').innerText = tempTrip.passageiro;
-      document.getElementById('resContato').innerText = tempTrip.contato;
-      document.getElementById('resData').innerText = tempTrip.data;
-      document.getElementById('resHorario').innerText = tempTrip.horario;
-      document.getElementById('resOrigem').innerText = tempTrip.origem;
-      document.getElementById('resDestino').innerText = tempTrip.destino;
-      document.getElementById('resBagagem').innerText = tempTrip.bagagem;
-      document.getElementById('resQtd').innerText = tempTrip.passageiros;
+      document.getElementById('resPassageiro').innerText = tempTrip.passageiro || '-';
+      document.getElementById('resContato').innerText = tempTrip.contato || '-';
+      document.getElementById('resData').innerText = tempTrip.data || '-';
+      document.getElementById('resHorario').innerText = tempTrip.horario || '-';
+      document.getElementById('resOrigem').innerText = tempTrip.origem || '-';
+      document.getElementById('resDestino').innerText = tempTrip.destino || '-';
+      document.getElementById('resBagagem').innerText = tempTrip.bagagem || '-';
+      document.getElementById('resQtd').innerText = tempTrip.passageiros || '-';
 
       document.getElementById('importBox').style.display = 'none';
       document.getElementById('formReview').style.display = 'flex';
@@ -459,17 +488,17 @@ _Aguardo a confirmacao e orcamento._`;
       }
 
       container.innerHTML = trips.map(t => {
-        const telLimpo = t.contato.replace(/\D/g, '');
+        const telLimpo = (t.contato || '').replace(/\D/g, '');
         const msgWhats = encodeURIComponent(`Olá ${t.passageiro}, tudo bem? Seu agendamento de transfer para o dia ${t.data} às ${t.horario} foi confirmado pela Ramos Executive. Valor orçado: ${t.valor}. Estamos à disposição!`);
-        const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(t.origem)}&navigate=yes`;
-        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(t.origem)}`;
+        const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(t.origem || '')}&navigate=yes`;
+        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(t.origem || '')}`;
         
         return `
           <div class="trip-card">
             <div class="trip-header">
               <div>
                 <strong style="color: #fff; font-size: 1rem;">${t.passageiro}</strong>
-                <div style="color: var(--text-muted); font-size: 0.78rem;">${t.contato}</div>
+                <div style="color: var(--text-muted); font-size: 0.78rem;">${t.contato || 'Sem telefone'}</div>
               </div>
               <div style="text-align: right;">
                 <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Orçamento</span>
@@ -478,8 +507,8 @@ _Aguardo a confirmacao e orcamento._`;
             </div>
 
             <div style="display: flex; gap: 16px; font-size: 0.82rem; background: #0c0e12; padding: 8px 12px; border-radius: 8px;">
-              <div>📅 <strong>${t.data}</strong></div>
-              <div>⏰ <strong>${t.horario}</strong></div>
+              <div>📅 <strong>${t.data || 'Sem data'}</strong></div>
+              <div>⏰ <strong>${t.horario || 'Sem hora'}</strong></div>
             </div>
 
             <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px;">
@@ -493,7 +522,7 @@ _Aguardo a confirmacao e orcamento._`;
             </div>
 
             <div class="action-row">
-              <a href="https://wa.me/55${telLimpo}?text=${msgWhats}" target="_blank" class="btn btn-whatsapp">WhatsApp</a>
+              <a href="${telLimpo ? 'https://wa.me/55' + telLimpo + '?text=' + msgWhats : '#'}" ${telLimpo ? 'target="_blank"' : 'onclick="alert(\'Telefone não cadastrado\')"' } class="btn btn-whatsapp">WhatsApp</a>
               <button class="btn btn-agenda" onclick="criarEventoAgenda('${t.passageiro}', '${t.origem}', '${t.data}', '${t.horario}', '${t.destino}')">Agenda</button>
               <button class="btn btn-del" onclick="removerViagem(${t.id})">✕</button>
             </div>
@@ -511,14 +540,23 @@ _Aguardo a confirmacao e orcamento._`;
     }
 
     function criarEventoAgenda(passageiro, origem, data, horario, destino) {
+      if (!data || !horario || !data.includes('/') || !horario.includes(':')) {
+        return alert('Data ou horário incompletos para envio à Agenda.');
+      }
+
       const [dia, mes, ano] = data.split('/');
       const [h, m] = horario.split(':');
-      if (!ano || !mes || !dia || !h || !m) return alert('Data ou horário inválidos.');
+      
+      const anoCompleto = ano.length === 2 ? '20' + ano : ano;
+      const dataObj = new Date(parseInt(anoCompleto, 10), parseInt(mes, 10) - 1, parseInt(dia, 10), parseInt(h, 10), parseInt(m, 10));
+      
+      if (isNaN(dataObj.getTime())) {
+        return alert('Data ou horário inválidos.');
+      }
 
-      const dataObj = new Date(ano, mes - 1, dia, h, m);
       const dataFim = new Date(dataObj.getTime() + 60 * 60 * 1000);
-
       const fDate = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+      
       const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Transfer: ' + passageiro)}&dates=${fDate(dataObj)}/${fDate(dataFim)}&details=${encodeURIComponent('Destino: ' + destino)}&location=${encodeURIComponent(origem)}`;
       window.open(calUrl, '_blank');
     }

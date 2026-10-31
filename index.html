@@ -295,6 +295,77 @@
       border: 1px solid rgba(239, 68, 68, 0.3);
       padding: 0;
     }
+
+    /* Modal seletor de destino de navegação */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 9999;
+    }
+
+    .modal-content {
+      background: #15181e;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 380px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+
+    .modal-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-option-btn {
+      background: #0d0f12;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 12px 14px;
+      text-align: left;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .nav-option-btn:active {
+      border-color: var(--gold);
+      background: #1a1e26;
+    }
+
+    .nav-option-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-option-address {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   </style>
 </head>
 <body>
@@ -349,8 +420,23 @@
           <label class="field-label" for="resOrigem">Embarque (Origem)</label>
           <input type="text" id="resOrigem" class="input-field">
         </div>
+
+        <!-- Campos de Paradas Intermediárias -->
         <div class="field-item full">
-          <label class="field-label" for="resDestino">Desembarque (Destino)</label>
+          <label class="field-label" for="resParada1">Parada 1 (Opcional)</label>
+          <input type="text" id="resParada1" class="input-field" placeholder="Ex: Av. Afonso Pena, 1500">
+        </div>
+        <div class="field-item full">
+          <label class="field-label" for="resParada2">Parada 2 (Opcional)</label>
+          <input type="text" id="resParada2" class="input-field" placeholder="Ex: Hotel Fasano">
+        </div>
+        <div class="field-item full">
+          <label class="field-label" for="resParada3">Parada 3 (Opcional)</label>
+          <input type="text" id="resParada3" class="input-field" placeholder="Ex: Escritório">
+        </div>
+
+        <div class="field-item full">
+          <label class="field-label" for="resDestino">Desembarque (Destino Final)</label>
           <input type="text" id="resDestino" class="input-field">
         </div>
         <div class="field-item">
@@ -384,6 +470,21 @@
 
   </div>
 
+  <!-- MODAL PARA ESCOLHER DESTINO DO WAZE OU MAPS -->
+  <div id="navModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-title">
+        <span id="navModalAppTitle">Navegar com Waze</span>
+        <span style="cursor: pointer; font-size: 1.1rem; color: var(--text-muted);" onclick="fecharModalNav()">✕</span>
+      </div>
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: -6px;">Para qual local deseja traçar rota agora?</div>
+      
+      <div id="navModalOptions" style="display: flex; flex-direction: column; gap: 8px;"></div>
+
+      <button class="btn btn-secondary" style="margin-top: 6px;" onclick="fecharModalNav()">Fechar</button>
+    </div>
+  </div>
+
   <script>
     function carregarExemplo() {
       document.getElementById('rawMessage').value = `✦ *SOLICITACAO DE TRANSFER — RAMOS EXECUTIVE* ✦
@@ -395,6 +496,8 @@ _Mobilidade com Elegancia_
 ⏰ *Horário:* 12:30
 
 📍 *Origem:* R Geraldo Teixeira da Costa, 1049
+🛑 *Parada 1:* Av. Afonso Pena, 1500
+🛑 *Parada 2:* Hotel Fasano Belo Horizonte
 🏁 *Destino:* Aeroporto Confins
 ✈️ *Voo:* Não informado
 👥 *Passageiros:* 2 Passageiros
@@ -450,8 +553,11 @@ _Aguardo a confirmação e orçamento._`;
       }
 
       let origem = findValue(['origem', 'embarque', 'partida']);
+      let parada1 = findValue(['parada 1', 'parada 01', 'primeira parada', 'parada']);
+      let parada2 = findValue(['parada 2', 'parada 02', 'segunda parada']);
+      let parada3 = findValue(['parada 3', 'parada 03', 'terceira parada']);
       let destino = findValue(['destino', 'desembarque', 'chegada']);
-      let voo = findValue(['voo', 'n[uú]mero do voo']) || 'Não informado';
+
       let passageiros = findValue(['passageiros', 'qtd passageiros', 'pessoas']) || '1';
       let bagagem = findValue(['bagagem', 'malas']) || 'Não informada';
 
@@ -463,6 +569,9 @@ _Aguardo a confirmação e orçamento._`;
       document.getElementById('resData').value = data;
       document.getElementById('resHorario').value = horario;
       document.getElementById('resOrigem').value = origem;
+      document.getElementById('resParada1').value = parada1;
+      document.getElementById('resParada2').value = parada2;
+      document.getElementById('resParada3').value = parada3;
       document.getElementById('resDestino').value = destino;
       document.getElementById('resBagagem').value = bagagem;
       document.getElementById('resQtd').value = passageiros;
@@ -494,6 +603,9 @@ _Aguardo a confirmação e orçamento._`;
           data: cleanData,
           horario: cleanHorario,
           origem: document.getElementById('resOrigem').value.trim(),
+          parada1: document.getElementById('resParada1').value.trim(),
+          parada2: document.getElementById('resParada2').value.trim(),
+          parada3: document.getElementById('resParada3').value.trim(),
           destino: document.getElementById('resDestino').value.trim(),
           bagagem: document.getElementById('resBagagem').value.trim(),
           passageiros: document.getElementById('resQtd').value.trim(),
@@ -539,9 +651,11 @@ _Aguardo a confirmação e orçamento._`;
       }
 
       container.innerHTML = trips.map(t => {
-        const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(t.origem || '')}&navigate=yes`;
-        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(t.origem || '')}`;
-        
+        let paradasHtml = '';
+        if (t.parada1) paradasHtml += `<div>🟡 <span style="color: var(--text-muted);">Parada 1:</span> ${escapeHtml(t.parada1)}</div>`;
+        if (t.parada2) paradasHtml += `<div>🟡 <span style="color: var(--text-muted);">Parada 2:</span> ${escapeHtml(t.parada2)}</div>`;
+        if (t.parada3) paradasHtml += `<div>🟡 <span style="color: var(--text-muted);">Parada 3:</span> ${escapeHtml(t.parada3)}</div>`;
+
         return `
           <div class="trip-card">
             <div class="trip-header">
@@ -562,12 +676,13 @@ _Aguardo a confirmação e orçamento._`;
 
             <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px;">
               <div>🟢 <span style="color: var(--text-muted);">Origem:</span> ${escapeHtml(t.origem || 'Não informada')}</div>
+              ${paradasHtml}
               <div>🔴 <span style="color: var(--text-muted);">Destino:</span> ${escapeHtml(t.destino || 'Não informado')}</div>
             </div>
 
             <div class="nav-buttons">
-              <a href="${wazeUrl}" target="_blank" class="btn btn-waze">🚗 Abrir Waze</a>
-              <a href="${mapsUrl}" target="_blank" class="btn btn-maps">📍 Abrir Maps</a>
+              <button class="btn btn-waze" onclick="abrirModalNav(${t.id}, 'waze')">🚗 Abrir Waze</button>
+              <button class="btn btn-maps" onclick="abrirModalNav(${t.id}, 'maps')">📍 Abrir Maps</button>
             </div>
 
             <div class="action-row">
@@ -584,6 +699,58 @@ _Aguardo a confirmação e orçamento._`;
       return String(str || '').replace(/[&<>"']/g, function(m) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
       });
+    }
+
+    function abrirModalNav(id, app) {
+      const trips = getTrips();
+      const t = trips.find(item => item.id === id);
+      if (!t) return;
+
+      const appTitle = app === 'waze' ? '🚗 Navegar com Waze' : '📍 Navegar com Google Maps';
+      document.getElementById('navModalAppTitle').innerText = appTitle;
+
+      const optionsContainer = document.getElementById('navModalOptions');
+      optionsContainer.innerHTML = '';
+
+      const locations = [];
+      if (t.origem) locations.push({ label: '🟢 Origem (Buscar Passageiro)', address: t.origem, color: 'var(--green)' });
+      if (t.parada1) locations.push({ label: '🟡 Parada 1', address: t.parada1, color: '#facc15' });
+      if (t.parada2) locations.push({ label: '🟡 Parada 2', address: t.parada2, color: '#facc15' });
+      if (t.parada3) locations.push({ label: '🟡 Parada 3', address: t.parada3, color: '#facc15' });
+      if (t.destino) locations.push({ label: '🔴 Destino Final', address: t.destino, color: '#ef4444' });
+
+      if (locations.length === 0) {
+        optionsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem;">Nenhum endereço cadastrado.</div>';
+      } else {
+        locations.forEach(loc => {
+          const btn = document.createElement('div');
+          btn.className = 'nav-option-btn';
+          btn.innerHTML = `
+            <span class="nav-option-label" style="color: ${loc.color};">${loc.label}</span>
+            <span class="nav-option-address">${escapeHtml(loc.address)}</span>
+          `;
+          btn.onclick = () => {
+            fecharModalNav();
+            iniciarNavegacao(app, loc.address);
+          };
+          optionsContainer.appendChild(btn);
+        });
+      }
+
+      document.getElementById('navModal').style.display = 'flex';
+    }
+
+    function fecharModalNav() {
+      document.getElementById('navModal').style.display = 'none';
+    }
+
+    function iniciarNavegacao(app, endereco) {
+      if (!endereco) return alert('Endereço não disponível.');
+      if (app === 'waze') {
+        window.open(`https://waze.com/ul?q=${encodeURIComponent(endereco)}&navigate=yes`, '_blank');
+      } else {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(endereco)}`, '_blank');
+      }
     }
 
     function abrirWhatsTrip(id) {
@@ -629,7 +796,12 @@ _Aguardo a confirmação e orçamento._`;
       const dFim = new Date(dInicio.getTime() + 60 * 60 * 1000);
       const endStr = `${dFim.getFullYear()}${pad(dFim.getMonth() + 1)}${pad(dFim.getDate())}T${pad(dFim.getHours())}${pad(dFim.getMinutes())}00`;
 
-      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Transfer: ' + t.passageiro)}&dates=${startStr}/${endStr}&details=${encodeURIComponent('Destino: ' + (t.destino || ''))}&location=${encodeURIComponent(t.origem || '')}`;
+      let detalhes = `Destino: ${t.destino || ''}`;
+      if (t.parada1) detalhes += `\nParada 1: ${t.parada1}`;
+      if (t.parada2) detalhes += `\nParada 2: ${t.parada2}`;
+      if (t.parada3) detalhes += `\nParada 3: ${t.parada3}`;
+
+      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Transfer: ' + t.passageiro)}&dates=${startStr}/${endStr}&details=${encodeURIComponent(detalhes)}&location=${encodeURIComponent(t.origem || '')}`;
       window.open(calUrl, '_blank');
     }
 
@@ -645,4 +817,3 @@ _Aguardo a confirmação e orçamento._`;
   </script>
 </body>
 </html>
-

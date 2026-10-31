@@ -326,7 +326,7 @@
     <div class="card" id="formReview" style="display: none;">
       <div class="card-title">
         <span>Dados Extraídos</span>
-        <span style="font-size: 0.68rem; color: var(--text-muted); text-transform: none;">Pode editar antes de confirmar</span>
+        <span style="font-size: 0.68rem; color: var(--text-muted); text-transform: none;">Conferir antes de salvar</span>
       </div>
       <div class="review-grid">
         <div class="field-item">
@@ -339,11 +339,11 @@
         </div>
         <div class="field-item">
           <label class="field-label" for="resData">Data</label>
-          <input type="text" id="resData" class="input-field" placeholder="DD/MM/AAAA">
+          <input type="text" id="resData" class="input-field" placeholder="31/10/2026">
         </div>
         <div class="field-item">
           <label class="field-label" for="resHorario">Horário</label>
-          <input type="text" id="resHorario" class="input-field" placeholder="00:00">
+          <input type="text" id="resHorario" class="input-field" placeholder="12:30">
         </div>
         <div class="field-item full">
           <label class="field-label" for="resOrigem">Embarque (Origem)</label>
@@ -390,9 +390,9 @@
 _Mobilidade com Elegancia_
 
 👤 *Passageiro:* Camila Altamira Ernesto
-📱 *Contato:* (31) 98115-7372
+📱 *Contato:* (31) 97341-7972
 📅 *Data:* 31/10/2026
-⏰ *Horário:* 07:30
+⏰ *Horário:* 12:30
 
 📍 *Origem:* R Geraldo Teixeira da Costa, 1049
 🏁 *Destino:* Aeroporto Confins
@@ -413,42 +413,55 @@ _Aguardo a confirmação e orçamento._`;
 
       const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
-      const findAfter = (prefixes) => {
+      const findValue = (keywords) => {
         for (const line of lines) {
-          for (const p of prefixes) {
-            const re = new RegExp(`^[^a-zA-Z0-9]*${p}\\s*[:：\\-]?\\s*(.*)$`, 'i');
-            const m = line.match(re);
-            if (m && m[1]) return clean(m[1]);
+          for (const kw of keywords) {
+            const regex = new RegExp(`^[^a-zA-Z0-9]*${kw}\\s*[:：\\-]?\\s*(.*)$`, 'i');
+            const match = line.match(regex);
+            if (match && match[1]) {
+              return clean(match[1]);
+            }
           }
         }
         return '';
       };
 
-      let passageiro = findAfter(['passageiro', 'cliente', 'nome']) || 'Não informado';
-
-      let contato = findAfter(['contato', 'telefone', 'celular', 'whatsapp', 'fone', 'tel']);
+      // Limpeza dos campos
+      let passageiro = findValue(['passageiro', 'cliente', 'nome']) || 'Não informado';
+      
+      let contato = findValue(['contato', 'telefone', 'celular', 'whatsapp', 'fone', 'tel']);
       if (!contato) {
         const phoneMatch = raw.match(/(?:\+?55\s*)?(?:\(?\d{2}\)?\s*)?9?\d{4}[-\s]?\d{4}/);
         contato = phoneMatch ? clean(phoneMatch[0]) : '';
       }
 
-      let data = findAfter(['data', 'dia']);
-      if (!data) {
-        const dateMatch = raw.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
-        data = dateMatch ? dateMatch[0] : '';
+      // Garante apenas a data DD/MM/AAAA limpa
+      let data = '';
+      const dateMatch = raw.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
+      if (dateMatch) {
+        data = dateMatch[0];
+      } else {
+        data = findValue(['data', 'dia']);
       }
 
-      let horario = findAfter(['hor[aá]rio', 'hora', 'hor']);
-      if (!horario) {
-        const timeMatch = raw.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
-        horario = timeMatch ? `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}` : '';
+      // Garante apenas o horário HH:MM limpo
+      let horario = '';
+      const timeMatch = raw.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+      if (timeMatch) {
+        horario = `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}`;
+      } else {
+        horario = findValue(['hor[aá]rio', 'hora', 'hor']);
       }
 
-      let origem = findAfter(['origem', 'embarque', 'partida']);
-      let destino = findAfter(['destino', 'desembarque', 'chegada']);
-      let voo = findAfter(['voo', 'n[uú]mero do voo']) || 'Não informado';
-      let passageiros = findAfter(['passageiros', 'qtd passageiros', 'pessoas']) || '1';
-      let bagagem = findAfter(['bagagem', 'malas']) || 'Não informada';
+      let origem = findValue(['origem', 'embarque', 'partida']);
+      let destino = findValue(['destino', 'desembarque', 'chegada']);
+      let voo = findValue(['voo', 'n[uú]mero do voo']) || 'Não informado';
+      let passageiros = findValue(['passageiros', 'qtd passageiros', 'pessoas']) || '1';
+      let bagagem = findValue(['bagagem', 'malas']) || 'Não informada';
+
+      // Remove palavras duplicadas se existirem
+      origem = origem.replace(/^(origem|embarque)\s*[:：\-]?\s*/i, '');
+      destino = destino.replace(/^(destino|desembarque)\s*[:：\-]?\s*/i, '');
 
       document.getElementById('resPassageiro').value = passageiro;
       document.getElementById('resContato').value = contato;
@@ -469,12 +482,24 @@ _Aguardo a confirmação e orçamento._`;
     }
 
     function confirmarAgendamento() {
+      // Limpeza de segurança antes de salvar no localStorage
+      let rawData = document.getElementById('resData').value.trim();
+      let rawHorario = document.getElementById('resHorario').value.trim();
+
+      // Pega somente a data limpa (ex: 31/10/2026) mesmo se tiver texto antes
+      const dateMatch = rawData.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
+      const cleanData = dateMatch ? dateMatch[0] : rawData;
+
+      // Pega somente a hora limpa (ex: 12:30)
+      const timeMatch = rawHorario.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+      const cleanHorario = timeMatch ? `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}` : rawHorario;
+
       const trip = {
         id: Date.now(),
         passageiro: document.getElementById('resPassageiro').value.trim() || 'Não informado',
         contato: document.getElementById('resContato').value.trim(),
-        data: document.getElementById('resData').value.trim(),
-        horario: document.getElementById('resHorario').value.trim(),
+        data: cleanData,
+        horario: cleanHorario,
         origem: document.getElementById('resOrigem').value.trim(),
         destino: document.getElementById('resDestino').value.trim(),
         bagagem: document.getElementById('resBagagem').value.trim(),
@@ -494,7 +519,7 @@ _Aguardo a confirmação e orçamento._`;
     function renderTrips() {
       const trips = JSON.parse(localStorage.getItem('ramos_trips') || '[]');
       const container = document.getElementById('tripsList');
-      document.getElementById('totalTrips').innerText = `${trips.length} agendamento(s)`[span_0](start_span)[span_0](end_span);
+      document.getElementById('totalTrips').innerText = `${trips.length} agendamento(s)`;
 
       if (trips.length === 0) {
         container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 24px;">Nenhum agendamento registado ainda.</div>`;
@@ -537,7 +562,7 @@ _Aguardo a confirmação e orçamento._`;
 
             <div class="action-row">
               <a href="${telLimpo ? 'https://wa.me/55' + telLimpo + '?text=' + msgWhats : '#'}" ${telLimpo ? 'target="_blank"' : 'onclick="alert(\'Telefone não cadastrado\')"' } class="btn btn-whatsapp">WhatsApp</a>
-              <button class="btn btn-agenda" onclick="criarEventoAgenda('${t.passageiro.replace(/'/g, "\\'")}', '${(t.origem || '').replace(/'/g, "\\'")}', '${t.data}', '${t.horario}', '${(t.destino || '').replace(/'/g, "\\'")}')">Agenda</button>
+              <button class="btn btn-agenda" onclick="criarEventoAgenda('${(t.passageiro || '').replace(/'/g, "\\'")}', '${(t.origem || '').replace(/'/g, "\\'")}', '${t.data}', '${t.horario}', '${(t.destino || '').replace(/'/g, "\\'")}')">Agenda</button>
               <button class="btn btn-del" onclick="removerViagem(${t.id})">✕</button>
             </div>
           </div>
@@ -553,37 +578,14 @@ _Aguardo a confirmação e orçamento._`;
       renderTrips();
     }
 
-    function criarEventoAgenda(passageiro, origem, data, horario, destino) {
-      if (!data || !horario) {
+    function criarEventoAgenda(passageiro, origem, rawData, rawHorario, destino) {
+      if (!rawData || !rawHorario) {
         return alert('Data ou horário não definidos para este agendamento.');
       }
 
-      const pData = data.split('/');
-      const pTempo = horario.replace('h', ':').split(':');
+      // Extrai os números puros de data e horário
+      const dateMatch = String(rawData).match(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/);
+      const timeMatch = String(rawHorario).match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
 
-      if (pData.length !== 3 || pTempo.length < 2) {
-        return alert('Formato de data ou hora inválido. Formato esperado: DD/MM/AAAA e HH:MM.');
-      }
-
-      let dia = parseInt(pData[0], 10);
-      let mes = parseInt(pData[1], 10) - 1;
-      let ano = parseInt(pData[2].length === 2 ? '20' + pData[2] : pData[2], 10);
-      let hora = parseInt(pTempo[0], 10);
-      let minuto = parseInt(pTempo[1], 10);
-
-      const dInicio = new Date(ano, mes, dia, hora, minuto);
-      if (isNaN(dInicio.getTime())) {
-        return alert('Data ou horário inválidos.');
-      }
-
-      const dFim = new Date(dInicio.getTime() + 60 * 60 * 1000);
-      const fDate = (d) => d.toISOString().replace(/[-:]/g, "").split('.')[0] + "Z";
-
-      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Transfer: ' + passageiro)}&dates=${fDate(dInicio)}/${fDate(dFim)}&details=${encodeURIComponent('Destino: ' + destino)}&location=${encodeURIComponent(origem)}`;
-      window.open(calUrl, '_blank');
-    }
-
-    renderTrips();
-  </script>
-</body>
-</html>
+      if (!dateMatch || !timeMatch) {
+        return alert('Forma

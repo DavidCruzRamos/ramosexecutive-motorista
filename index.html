@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Ramos Executive | Painel do Motorista</title>
   
-  <link rel="manifest" href="manifest.json?v=2">
+  <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/jpeg" href="IMG-20260726-WA0142.jpg">
   <link rel="shortcut icon" href="IMG-20260726-WA0142.jpg">
   <link rel="apple-touch-icon" href="IMG-20260726-WA0142.jpg">
@@ -59,68 +59,6 @@
       display: flex;
       flex-direction: column;
       gap: 18px;
-    }
-
-    /* TELA DE BLOQUEIO / PIN */
-    #lockScreen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #08090b;
-      z-index: 99999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .lock-box {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px 20px;
-      width: 100%;
-      max-width: 340px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 18px;
-      text-align: center;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-    }
-
-    .lock-logo {
-      width: 76px;
-      height: 76px;
-      border-radius: 50%;
-      border: 2px solid var(--gold);
-      object-fit: cover;
-    }
-
-    .lock-title {
-      font-family: 'Cinzel', serif;
-      font-size: 1.15rem;
-      color: var(--gold-light);
-      font-weight: 700;
-    }
-
-    .lock-input {
-      width: 100%;
-      background: #0b0c0f;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px;
-      text-align: center;
-      font-size: 1.5rem;
-      letter-spacing: 8px;
-      color: #fff;
-      outline: none;
-    }
-
-    .lock-input:focus {
-      border-color: var(--gold);
     }
 
     .header {
@@ -431,24 +369,7 @@
 </head>
 <body>
 
-  <!-- TELA DE BLOQUEIO / PIN FIXO 191215 -->
-  <div id="lockScreen">
-    <div class="lock-box">
-      <img src="IMG-20260726-WA0142.jpg" class="lock-logo" alt="Logo">
-      <div>
-        <div class="lock-title">Ramos Executive</div>
-        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Acesso restrito ao motorista</div>
-      </div>
-      
-      <!-- inputmode="numeric" abre teclado numérico direto, oninput valida sozinho ao digitar os 6 dígitos -->
-      <input type="password" id="pinInput" class="lock-input" placeholder="••••••" maxlength="6" inputmode="numeric" oninput="checarPinAutomatico(this.value)">
-      
-      <button type="button" class="btn btn-gold" onclick="validarPinManual()">Entrar</button>
-      <div id="lockError" style="font-size: 0.78rem; color: #ef4444; display: none; font-weight: 600;">Senha incorreta. Tente novamente.</div>
-    </div>
-  </div>
-
-  <div class="app-container" id="mainApp" style="display: none;">
+  <div class="app-container">
 
     <div class="header">
       <div>
@@ -457,7 +378,7 @@
       </div>
       <div class="badge-privacy">
         <span class="badge-dot"></span>
-        Protegido
+        100% Local
       </div>
     </div>
 
@@ -563,47 +484,6 @@
   </div>
 
   <script>
-    var SENHA_MESTRA = "191215";
-
-    function liberarPainel() {
-      var lock = document.getElementById('lockScreen');
-      var app = document.getElementById('mainApp');
-      if (lock) lock.style.setProperty('display', 'none', 'important');
-      if (app) app.style.setProperty('display', 'flex', 'important');
-      renderTrips();
-    }
-
-    function checarPinAutomatico(valor) {
-      var val = (valor || '').trim();
-      var err = document.getElementById('lockError');
-      if (err) err.style.display = 'none';
-
-      // Assim que atinge 6 dígitos, valida automaticamente
-      if (val.length === 6) {
-        if (val === SENHA_MESTRA) {
-          liberarPainel();
-        } else {
-          if (err) err.style.display = 'block';
-          document.getElementById('pinInput').value = '';
-        }
-      }
-    }
-
-    function validarPinManual() {
-      var pinField = document.getElementById('pinInput');
-      var val = (pinField ? pinField.value : '').trim();
-      var err = document.getElementById('lockError');
-
-      if (val === SENHA_MESTRA) {
-        if (err) err.style.display = 'none';
-        liberarPainel();
-      } else {
-        if (err) err.style.display = 'block';
-        if (pinField) pinField.value = '';
-      }
-    }
-
-    // Funções Operacionais do App
     function carregarExemplo() {
       document.getElementById('rawMessage').value = `✦ *SOLICITACAO DE TRANSFER — RAMOS EXECUTIVE* ✦
 _Mobilidade com Elegancia_
@@ -674,4 +554,248 @@ _Aguardo a confirmação e orçamento._`;
       var parada3 = findValue(['parada 3', 'parada 03', 'terceira parada']);
       var destino = findValue(['destino', 'desembarque', 'chegada']);
 
-      var pass
+      var passageiros = findValue(['passageiros', 'qtd passageiros', 'pessoas']) || '1';
+      var bagagem = findValue(['bagagem', 'malas']) || 'Não informada';
+
+      origem = origem.replace(/^(origem|embarque)\s*[:：\-]?\s*/i, '');
+      destino = destino.replace(/^(destino|desembarque)\s*[:：\-]?\s*/i, '');
+
+      document.getElementById('resPassageiro').value = passageiro;
+      document.getElementById('resContato').value = contato;
+      document.getElementById('resData').value = data;
+      document.getElementById('resHorario').value = horario;
+      document.getElementById('resOrigem').value = origem;
+      document.getElementById('resParada1').value = parada1;
+      document.getElementById('resParada2').value = parada2;
+      document.getElementById('resParada3').value = parada3;
+      document.getElementById('resDestino').value = destino;
+      document.getElementById('resBagagem').value = bagagem;
+      document.getElementById('resQtd').value = passageiros;
+
+      document.getElementById('importBox').style.display = 'none';
+      document.getElementById('formReview').style.display = 'flex';
+    }
+
+    function cancelarRevisao() {
+      document.getElementById('formReview').style.display = 'none';
+      document.getElementById('importBox').style.display = 'flex';
+    }
+
+    function confirmarAgendamento() {
+      try {
+        var rawData = document.getElementById('resData').value.trim();
+        var rawHorario = document.getElementById('resHorario').value.trim();
+
+        var dateMatch = rawData.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
+        var cleanData = dateMatch ? dateMatch[0] : rawData;
+
+        var timeMatch = rawHorario.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+        var cleanHorario = timeMatch ? (timeMatch[1].length === 1 ? '0' + timeMatch[1] : timeMatch[1]) + ':' + timeMatch[2] : rawHorario;
+
+        var trip = {
+          id: Date.now(),
+          passageiro: document.getElementById('resPassageiro').value.trim() || 'Não informado',
+          contato: document.getElementById('resContato').value.trim(),
+          data: cleanData,
+          horario: cleanHorario,
+          origem: document.getElementById('resOrigem').value.trim(),
+          parada1: document.getElementById('resParada1').value.trim(),
+          parada2: document.getElementById('resParada2').value.trim(),
+          parada3: document.getElementById('resParada3').value.trim(),
+          destino: document.getElementById('resDestino').value.trim(),
+          bagagem: document.getElementById('resBagagem').value.trim(),
+          passageiros: document.getElementById('resQtd').value.trim(),
+          valor: document.getElementById('inputValor').value.trim() || 'A combinar'
+        };
+
+        var trips = [];
+        try {
+          trips = JSON.parse(localStorage.getItem('ramos_trips') || '[]');
+        } catch(e) { trips = []; }
+
+        trips.unshift(trip);
+        localStorage.setItem('ramos_trips', JSON.stringify(trips));
+
+        document.getElementById('rawMessage').value = '';
+        cancelarRevisao();
+        renderTrips();
+      } catch (err) {
+        alert('Erro ao salvar agendamento: ' + err.message);
+      }
+    }
+
+    function getTrips() {
+      try {
+        return JSON.parse(localStorage.getItem('ramos_trips') || '[]');
+      } catch (e) { return []; }
+    }
+
+    function renderTrips() {
+      var trips = getTrips();
+      var container = document.getElementById('tripsList');
+      var countEl = document.getElementById('totalTrips');
+      
+      if (countEl) countEl.innerText = trips.length + ' agendamento(s)';
+      if (!container) return;
+
+      if (trips.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 24px;">Nenhum agendamento registado ainda.</div>';
+        return;
+      }
+
+      container.innerHTML = trips.map(function(t) {
+        var paradasHtml = '';
+        if (t.parada1) paradasHtml += '<div>🟡 <span style="color: var(--text-muted);">Parada 1:</span> ' + escapeHtml(t.parada1) + '</div>';
+        if (t.parada2) paradasHtml += '<div>🟡 <span style="color: var(--text-muted);">Parada 2:</span> ' + escapeHtml(t.parada2) + '</div>';
+        if (t.parada3) paradasHtml += '<div>🟡 <span style="color: var(--text-muted);">Parada 3:</span> ' + escapeHtml(t.parada3) + '</div>';
+
+        return '<div class="trip-card">' +
+          '<div class="trip-header">' +
+            '<div>' +
+              '<strong style="color: #fff; font-size: 1rem;">' + escapeHtml(t.passageiro) + '</strong>' +
+              '<div style="color: var(--text-muted); font-size: 0.78rem;">' + escapeHtml(t.contato || 'Sem telefone') + '</div>' +
+            '</div>' +
+            '<div style="text-align: right;">' +
+              '<span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Orçamento</span>' +
+              '<div style="color: var(--green); font-weight: 700; font-size: 1rem;">' + escapeHtml(t.valor) + '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display: flex; gap: 16px; font-size: 0.82rem; background: #0c0e12; padding: 8px 12px; border-radius: 8px;">' +
+            '<div>📅 <strong>' + escapeHtml(t.data || 'Sem data') + '</strong></div>' +
+            '<div>⏰ <strong>' + escapeHtml(t.horario || 'Sem hora') + '</strong></div>' +
+          '</div>' +
+          '<div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px;">' +
+            '<div>🟢 <span style="color: var(--text-muted);">Origem:</span> ' + escapeHtml(t.origem || 'Não informada') + '</div>' +
+            paradasHtml +
+            '<div>🔴 <span style="color: var(--text-muted);">Destino:</span> ' + escapeHtml(t.destino || 'Não informado') + '</div>' +
+          '</div>' +
+          '<div class="nav-buttons">' +
+            '<button type="button" class="btn btn-waze" onclick="abrirModalNav(' + t.id + ', \'waze\')">🚗 Abrir Waze</button>' +
+            '<button type="button" class="btn btn-maps" onclick="abrirModalNav(' + t.id + ', \'maps\')">📍 Abrir Maps</button>' +
+          '</div>' +
+          '<div class="action-row">' +
+            '<button type="button" class="btn btn-whatsapp" onclick="abrirWhatsTrip(' + t.id + ')">WhatsApp</button>' +
+            '<button type="button" class="btn btn-agenda" onclick="abrirAgendaTrip(' + t.id + ')">Agenda</button>' +
+            '<button type="button" class="btn btn-del" onclick="removerViagem(' + t.id + ')">✕</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+
+    function abrirModalNav(id, app) {
+      var trips = getTrips();
+      var t = trips.find(function(item) { return item.id === id; });
+      if (!t) return;
+
+      var appTitle = app === 'waze' ? '🚗 Navegar com Waze' : '📍 Navegar com Google Maps';
+      document.getElementById('navModalAppTitle').innerText = appTitle;
+
+      var optionsContainer = document.getElementById('navModalOptions');
+      optionsContainer.innerHTML = '';
+
+      var locations = [];
+      if (t.origem) locations.push({ label: '🟢 Origem (Buscar Passageiro)', address: t.origem, color: 'var(--green)' });
+      if (t.parada1) locations.push({ label: '🟡 Parada 1', address: t.parada1, color: '#facc15' });
+      if (t.parada2) locations.push({ label: '🟡 Parada 2', address: t.parada2, color: '#facc15' });
+      if (t.parada3) locations.push({ label: '🟡 Parada 3', address: t.parada3, color: '#facc15' });
+      if (t.destino) locations.push({ label: '🔴 Destino Final', address: t.destino, color: '#ef4444' });
+
+      if (locations.length === 0) {
+        optionsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem;">Nenhum endereço cadastrado.</div>';
+      } else {
+        locations.forEach(function(loc) {
+          var btn = document.createElement('div');
+          btn.className = 'nav-option-btn';
+          btn.innerHTML = '<span class="nav-option-label" style="color: ' + loc.color + ';">' + loc.label + '</span>' +
+                          '<span class="nav-option-address">' + escapeHtml(loc.address) + '</span>';
+          btn.onclick = function() {
+            fecharModalNav();
+            iniciarNavegacao(app, loc.address);
+          };
+          optionsContainer.appendChild(btn);
+        });
+      }
+
+      document.getElementById('navModal').style.display = 'flex';
+    }
+
+    function fecharModalNav() {
+      document.getElementById('navModal').style.display = 'none';
+    }
+
+    function iniciarNavegacao(app, endereco) {
+      if (!endereco) return alert('Endereço não disponível.');
+      if (app === 'waze') {
+        window.open('https://waze.com/ul?q=' + encodeURIComponent(endereco) + '&navigate=yes', '_blank');
+      } else {
+        window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(endereco), '_blank');
+      }
+    }
+
+    function abrirWhatsTrip(id) {
+      var trips = getTrips();
+      var t = trips.find(function(item) { return item.id === id; });
+      if (!t) return;
+
+      var telLimpo = (t.contato || '').replace(/\D/g, '');
+      if (!telLimpo) return alert('Telefone não informado neste agendamento.');
+
+      var msg = encodeURIComponent('Olá ' + t.passageiro + ', tudo bem? Seu agendamento de transfer para o dia ' + t.data + ' às ' + t.horario + ' foi confirmado pela Ramos Executive. Valor orçado: ' + t.valor + '. Estamos à disposição!');
+      window.open('https://wa.me/55' + telLimpo + '?text=' + msg, '_blank');
+    }
+
+    function abrirAgendaTrip(id) {
+      var trips = getTrips();
+      var t = trips.find(function(item) { return item.id === id; });
+      if (!t) return;
+
+      if (!t.data || !t.horario) return alert('Data ou horário não definidos para este agendamento.');
+
+      var dateMatch = String(t.data).match(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/);
+      var timeMatch = String(t.horario).match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+
+      if (!dateMatch || !timeMatch) return alert('Formato de data ou hora inválido. Use DD/MM/AAAA e HH:MM.');
+
+      var dia = parseInt(dateMatch[1], 10);
+      var mes = parseInt(dateMatch[2], 10) - 1;
+      var anoStr = dateMatch[3];
+      var ano = parseInt(anoStr.length === 2 ? '20' + anoStr : anoStr, 10);
+
+      var hora = parseInt(timeMatch[1], 10);
+      var minuto = parseInt(timeMatch[2], 10);
+
+      var pad = function(n) { return String(n).length === 1 ? '0' + n : String(n); };
+      var startStr = ano + pad(mes + 1) + pad(dia) + 'T' + pad(hora) + pad(minuto) + '00';
+
+      var dInicio = new Date(ano, mes, dia, hora, minuto);
+      var dFim = new Date(dInicio.getTime() + 60 * 60 * 1000);
+      var endStr = dFim.getFullYear() + pad(dFim.getMonth() + 1) + pad(dFim.getDate()) + 'T' + pad(dFim.getHours()) + pad(dFim.getMinutes()) + '00';
+
+      var detalhes = 'Destino: ' + (t.destino || '');
+      if (t.parada1) detalhes += '\nParada 1: ' + t.parada1;
+      if (t.parada2) detalhes += '\nParada 2: ' + t.parada2;
+      if (t.parada3) detalhes += '\nParada 3: ' + t.parada3;
+
+      var calUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent('Transfer: ' + t.passageiro) + '&dates=' + startStr + '/' + endStr + '&details=' + encodeURIComponent(detalhes) + '&location=' + encodeURIComponent(t.origem || '');
+      window.open(calUrl, '_blank');
+    }
+
+    function removerViagem(id) {
+      if (!confirm('Deseja remover este agendamento?')) return;
+      var trips = getTrips();
+      trips = trips.filter(function(t) { return t.id !== id; });
+      localStorage.setItem('ramos_trips', JSON.stringify(trips));
+      renderTrips();
+    }
+
+    renderTrips();
+  </script>
+</body>
+</html>
+

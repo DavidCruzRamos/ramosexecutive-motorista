@@ -377,7 +377,7 @@
     <!-- LISTA DE AGENDAMENTOS -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
       <span style="font-size: 0.8rem; text-transform: uppercase; color: var(--gold); letter-spacing: 1px; font-weight: 600;">Seus Agendamentos</span>
-      <span id="totalTrips" style="font-size: 0.75rem; color: var(--text-muted);">0 viagens</span>
+      <span id="totalTrips" style="font-size: 0.75rem; color: var(--text-muted);">0 agendamento(s)</span>
     </div>
 
     <div id="tripsList" style="display: flex; flex-direction: column; gap: 14px;"></div>
@@ -410,7 +410,6 @@ _Aguardo a confirmação e orçamento._`;
       if (!raw.trim()) return alert('Por favor, cole a mensagem primeiro.');
 
       const clean = (s) => (s || '').replace(/[*_~`]/g, '').trim();
-
       const lines = raw.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
 
       const findValue = (keywords) => {
@@ -426,7 +425,6 @@ _Aguardo a confirmação e orçamento._`;
         return '';
       };
 
-      // Limpeza dos campos
       let passageiro = findValue(['passageiro', 'cliente', 'nome']) || 'Não informado';
       
       let contato = findValue(['contato', 'telefone', 'celular', 'whatsapp', 'fone', 'tel']);
@@ -435,7 +433,6 @@ _Aguardo a confirmação e orçamento._`;
         contato = phoneMatch ? clean(phoneMatch[0]) : '';
       }
 
-      // Garante apenas a data DD/MM/AAAA limpa
       let data = '';
       const dateMatch = raw.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
       if (dateMatch) {
@@ -444,7 +441,6 @@ _Aguardo a confirmação e orçamento._`;
         data = findValue(['data', 'dia']);
       }
 
-      // Garante apenas o horário HH:MM limpo
       let horario = '';
       const timeMatch = raw.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
       if (timeMatch) {
@@ -459,7 +455,6 @@ _Aguardo a confirmação e orçamento._`;
       let passageiros = findValue(['passageiros', 'qtd passageiros', 'pessoas']) || '1';
       let bagagem = findValue(['bagagem', 'malas']) || 'Não informada';
 
-      // Remove palavras duplicadas se existirem
       origem = origem.replace(/^(origem|embarque)\s*[:：\-]?\s*/i, '');
       destino = destino.replace(/^(destino|desembarque)\s*[:：\-]?\s*/i, '');
 
@@ -482,44 +477,61 @@ _Aguardo a confirmação e orçamento._`;
     }
 
     function confirmarAgendamento() {
-      // Limpeza de segurança antes de salvar no localStorage
-      let rawData = document.getElementById('resData').value.trim();
-      let rawHorario = document.getElementById('resHorario').value.trim();
+      try {
+        let rawData = document.getElementById('resData').value.trim();
+        let rawHorario = document.getElementById('resHorario').value.trim();
 
-      // Pega somente a data limpa (ex: 31/10/2026) mesmo se tiver texto antes
-      const dateMatch = rawData.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
-      const cleanData = dateMatch ? dateMatch[0] : rawData;
+        const dateMatch = rawData.match(/\b\d{1,2}\/\d{1,2}\/\d{2,4}\b/);
+        const cleanData = dateMatch ? dateMatch[0] : rawData;
 
-      // Pega somente a hora limpa (ex: 12:30)
-      const timeMatch = rawHorario.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
-      const cleanHorario = timeMatch ? `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}` : rawHorario;
+        const timeMatch = rawHorario.match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+        const cleanHorario = timeMatch ? `${timeMatch[1].padStart(2, '0')}:${timeMatch[2]}` : rawHorario;
 
-      const trip = {
-        id: Date.now(),
-        passageiro: document.getElementById('resPassageiro').value.trim() || 'Não informado',
-        contato: document.getElementById('resContato').value.trim(),
-        data: cleanData,
-        horario: cleanHorario,
-        origem: document.getElementById('resOrigem').value.trim(),
-        destino: document.getElementById('resDestino').value.trim(),
-        bagagem: document.getElementById('resBagagem').value.trim(),
-        passageiros: document.getElementById('resQtd').value.trim(),
-        valor: document.getElementById('inputValor').value.trim() || 'A combinar'
-      };
+        const trip = {
+          id: Date.now(),
+          passageiro: document.getElementById('resPassageiro').value.trim() || 'Não informado',
+          contato: document.getElementById('resContato').value.trim(),
+          data: cleanData,
+          horario: cleanHorario,
+          origem: document.getElementById('resOrigem').value.trim(),
+          destino: document.getElementById('resDestino').value.trim(),
+          bagagem: document.getElementById('resBagagem').value.trim(),
+          passageiros: document.getElementById('resQtd').value.trim(),
+          valor: document.getElementById('inputValor').value.trim() || 'A combinar'
+        };
 
-      const trips = JSON.parse(localStorage.getItem('ramos_trips') || '[]');
-      trips.unshift(trip);
-      localStorage.setItem('ramos_trips', JSON.stringify(trips));
+        let trips = [];
+        try {
+          trips = JSON.parse(localStorage.getItem('ramos_trips') || '[]');
+        } catch(e) {
+          trips = [];
+        }
 
-      document.getElementById('rawMessage').value = '';
-      cancelarRevisao();
-      renderTrips();
+        trips.unshift(trip);
+        localStorage.setItem('ramos_trips', JSON.stringify(trips));
+
+        document.getElementById('rawMessage').value = '';
+        cancelarRevisao();
+        renderTrips();
+      } catch (err) {
+        alert('Erro ao guardar viagem: ' + err.message);
+      }
+    }
+
+    function getTrips() {
+      try {
+        return JSON.parse(localStorage.getItem('ramos_trips') || '[]');
+      } catch (e) {
+        return [];
+      }
     }
 
     function renderTrips() {
-      const trips = JSON.parse(localStorage.getItem('ramos_trips') || '[]');
+      const trips = getTrips();
       const container = document.getElementById('tripsList');
-      document.getElementById('totalTrips').innerText = `${trips.length} agendamento(s)`;
+      const countEl = document.getElementById('totalTrips');
+      
+      if (countEl) countEl.innerText = `${trips.length} agendamento(s)`;
 
       if (trips.length === 0) {
         container.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 24px;">Nenhum agendamento registado ainda.</div>`;
@@ -527,8 +539,6 @@ _Aguardo a confirmação e orçamento._`;
       }
 
       container.innerHTML = trips.map(t => {
-        const telLimpo = (t.contato || '').replace(/\D/g, '');
-        const msgWhats = encodeURIComponent(`Olá ${t.passageiro}, tudo bem? Seu agendamento de transfer para o dia ${t.data} às ${t.horario} foi confirmado pela Ramos Executive. Valor orçado: ${t.valor}. Estamos à disposição!`);
         const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(t.origem || '')}&navigate=yes`;
         const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(t.origem || '')}`;
         
@@ -536,23 +546,23 @@ _Aguardo a confirmação e orçamento._`;
           <div class="trip-card">
             <div class="trip-header">
               <div>
-                <strong style="color: #fff; font-size: 1rem;">${t.passageiro}</strong>
-                <div style="color: var(--text-muted); font-size: 0.78rem;">${t.contato || 'Sem telefone'}</div>
+                <strong style="color: #fff; font-size: 1rem;">${escapeHtml(t.passageiro)}</strong>
+                <div style="color: var(--text-muted); font-size: 0.78rem;">${escapeHtml(t.contato || 'Sem telefone')}</div>
               </div>
               <div style="text-align: right;">
                 <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Orçamento</span>
-                <div style="color: var(--green); font-weight: 700; font-size: 1rem;">${t.valor}</div>
+                <div style="color: var(--green); font-weight: 700; font-size: 1rem;">${escapeHtml(t.valor)}</div>
               </div>
             </div>
 
             <div style="display: flex; gap: 16px; font-size: 0.82rem; background: #0c0e12; padding: 8px 12px; border-radius: 8px;">
-              <div>📅 <strong>${t.data || 'Sem data'}</strong></div>
-              <div>⏰ <strong>${t.horario || 'Sem hora'}</strong></div>
+              <div>📅 <strong>${escapeHtml(t.data || 'Sem data')}</strong></div>
+              <div>⏰ <strong>${escapeHtml(t.horario || 'Sem hora')}</strong></div>
             </div>
 
             <div style="font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px;">
-              <div>🟢 <span style="color: var(--text-muted);">Origem:</span> ${t.origem || 'Não informada'}</div>
-              <div>🔴 <span style="color: var(--text-muted);">Destino:</span> ${t.destino || 'Não informado'}</div>
+              <div>🟢 <span style="color: var(--text-muted);">Origem:</span> ${escapeHtml(t.origem || 'Não informada')}</div>
+              <div>🔴 <span style="color: var(--text-muted);">Destino:</span> ${escapeHtml(t.destino || 'Não informado')}</div>
             </div>
 
             <div class="nav-buttons">
@@ -561,8 +571,8 @@ _Aguardo a confirmação e orçamento._`;
             </div>
 
             <div class="action-row">
-              <a href="${telLimpo ? 'https://wa.me/55' + telLimpo + '?text=' + msgWhats : '#'}" ${telLimpo ? 'target="_blank"' : 'onclick="alert(\'Telefone não cadastrado\')"' } class="btn btn-whatsapp">WhatsApp</a>
-              <button class="btn btn-agenda" onclick="criarEventoAgenda('${(t.passageiro || '').replace(/'/g, "\\'")}', '${(t.origem || '').replace(/'/g, "\\'")}', '${t.data}', '${t.horario}', '${(t.destino || '').replace(/'/g, "\\'")}')">Agenda</button>
+              <button class="btn btn-whatsapp" onclick="abrirWhatsTrip(${t.id})">WhatsApp</button>
+              <button class="btn btn-agenda" onclick="abrirAgendaTrip(${t.id})">Agenda</button>
               <button class="btn btn-del" onclick="removerViagem(${t.id})">✕</button>
             </div>
           </div>
@@ -570,22 +580,69 @@ _Aguardo a confirmação e orçamento._`;
       }).join('');
     }
 
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+      });
+    }
+
+    function abrirWhatsTrip(id) {
+      const trips = getTrips();
+      const t = trips.find(item => item.id === id);
+      if (!t) return;
+
+      const telLimpo = (t.contato || '').replace(/\D/g, '');
+      if (!telLimpo) return alert('Telefone não informado neste agendamento.');
+
+      const msg = encodeURIComponent(`Olá ${t.passageiro}, tudo bem? Seu agendamento de transfer para o dia ${t.data} às ${t.horario} foi confirmado pela Ramos Executive. Valor orçado: ${t.valor}. Estamos à disposição!`);
+      window.open(`https://wa.me/55${telLimpo}?text=${msg}`, '_blank');
+    }
+
+    function abrirAgendaTrip(id) {
+      const trips = getTrips();
+      const t = trips.find(item => item.id === id);
+      if (!t) return;
+
+      if (!t.data || !t.horario) {
+        return alert('Data ou horário não definidos para este agendamento.');
+      }
+
+      const dateMatch = String(t.data).match(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/);
+      const timeMatch = String(t.horario).match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
+
+      if (!dateMatch || !timeMatch) {
+        return alert('Formato de data ou hora inválido. Use DD/MM/AAAA e HH:MM.');
+      }
+
+      const dia = parseInt(dateMatch[1], 10);
+      const mes = parseInt(dateMatch[2], 10) - 1;
+      let anoStr = dateMatch[3];
+      const ano = parseInt(anoStr.length === 2 ? '20' + anoStr : anoStr, 10);
+
+      const hora = parseInt(timeMatch[1], 10);
+      const minuto = parseInt(timeMatch[2], 10);
+
+      const pad = (n) => String(n).padStart(2, '0');
+      const startStr = `${ano}${pad(mes + 1)}${pad(dia)}T${pad(hora)}${pad(minuto)}00`;
+
+      const dInicio = new Date(ano, mes, dia, hora, minuto);
+      const dFim = new Date(dInicio.getTime() + 60 * 60 * 1000);
+      const endStr = `${dFim.getFullYear()}${pad(dFim.getMonth() + 1)}${pad(dFim.getDate())}T${pad(dFim.getHours())}${pad(dFim.getMinutes())}00`;
+
+      const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent('Transfer: ' + t.passageiro)}&dates=${startStr}/${endStr}&details=${encodeURIComponent('Destino: ' + (t.destino || ''))}&location=${encodeURIComponent(t.origem || '')}`;
+      window.open(calUrl, '_blank');
+    }
+
     function removerViagem(id) {
       if (!confirm('Deseja remover este agendamento?')) return;
-      let trips = JSON.parse(localStorage.getItem('ramos_trips') || '[]');
+      let trips = getTrips();
       trips = trips.filter(t => t.id !== id);
       localStorage.setItem('ramos_trips', JSON.stringify(trips));
       renderTrips();
     }
 
-    function criarEventoAgenda(passageiro, origem, rawData, rawHorario, destino) {
-      if (!rawData || !rawHorario) {
-        return alert('Data ou horário não definidos para este agendamento.');
-      }
+    renderTrips();
+  </script>
+</body>
+</html>
 
-      // Extrai os números puros de data e horário
-      const dateMatch = String(rawData).match(/\b(\d{1,2})\/(\d{1,2})\/(\d{2,4})\b/);
-      const timeMatch = String(rawHorario).match(/\b([01]?\d|2[0-3])[:hH]([0-5]\d)\b/);
-
-      if (!dateMatch || !timeMatch) {
-        return alert('Forma

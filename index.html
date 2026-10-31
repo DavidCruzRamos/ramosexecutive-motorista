@@ -440,9 +440,9 @@
         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Acesso restrito ao motorista</div>
       </div>
       
-      <input type="password" id="pinInput" class="lock-input" placeholder="••••••" maxlength="8" autofocus inputmode="numeric">
+      <input type="password" id="pinInput" class="lock-input" placeholder="••••••" maxlength="10" autofocus inputmode="numeric" onkeydown="if(event.key==='Enter') validarSenha();">
       
-      <button class="btn btn-gold" onclick="validarSenha()">Entrar</button>
+      <button type="button" class="btn btn-gold" onclick="validarSenha()">Entrar</button>
       <div id="lockError" style="font-size: 0.75rem; color: #ef4444; display: none;">Senha incorreta. Tente novamente.</div>
     </div>
   </div>
@@ -566,9 +566,10 @@
     const SENHA_MESTRA = "191215";
 
     function validarSenha() {
-      const pinDigitado = document.getElementById('pinInput').value.trim();
+      const pinDigitado = (document.getElementById('pinInput').value || '').trim();
 
       if (pinDigitado === SENHA_MESTRA) {
+        sessionStorage.setItem('ramos_auth', 'true');
         document.getElementById('lockScreen').style.display = 'none';
         document.getElementById('mainApp').style.display = 'flex';
         renderTrips();
@@ -578,8 +579,13 @@
       }
     }
 
-    document.getElementById('pinInput').addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') validarSenha();
+    // Verifica se já estava desbloqueado nesta sessão
+    window.addEventListener('DOMContentLoaded', function() {
+      if (sessionStorage.getItem('ramos_auth') === 'true') {
+        document.getElementById('lockScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'flex';
+        renderTrips();
+      }
     });
 
     // Funções Operacionais do Aplicativo
@@ -665,10 +671,4 @@ _Aguardo a confirmação e orçamento._`;
       document.getElementById('resContato').value = contato;
       document.getElementById('resData').value = data;
       document.getElementById('resHorario').value = horario;
-      document.getElementById('resOrigem').value = origem;
-      document.getElementById('resParada1').value = parada1;
-      document.getElementById('resParada2').value = parada2;
-      document.getElementById('resParada3').value = parada3;
-      document.getElementById('resDestino').value = destino;
-      document.getElementById('resBagagem').value = bagagem;
-      doc
+      document.getElementB

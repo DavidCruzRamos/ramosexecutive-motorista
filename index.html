@@ -365,9 +365,71 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+
+    /* TELA DE BLOQUEIO POR SENHA */
+    body.locked .app-container { display: none; }
+
+    .lock-screen {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg-base);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 99999;
+    }
+
+    .lock-box {
+      width: 100%;
+      max-width: 360px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+
+    .lock-input {
+      width: 100%;
+      background: #0b0c0f;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 14px;
+      color: var(--text);
+      font-size: 1.3rem;
+      letter-spacing: 8px;
+      text-align: center;
+      outline: none;
+    }
+
+    .lock-input:focus { border-color: var(--gold); }
+
+    .lock-error {
+      color: #ef4444;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: none;
+    }
   </style>
 </head>
-<body>
+<body class="locked">
+
+  <div id="lockScreen" class="lock-screen">
+    <div class="lock-box">
+      <div>
+        <div class="brand-title">Ramos Executive</div>
+        <div class="brand-sub">Painel Operacional do Motorista</div>
+      </div>
+      <input type="password" id="lockInput" class="lock-input" inputmode="numeric" autocomplete="off" placeholder="••••••">
+      <div id="lockError" class="lock-error">Senha incorreta</div>
+      <button type="button" class="btn btn-gold" onclick="verificarSenha()">Entrar</button>
+    </div>
+  </div>
 
   <div class="app-container">
 
@@ -484,6 +546,28 @@
   </div>
 
   <script>
+    var SENHA_APP = '191215';
+
+    function verificarSenha() {
+      var campo = document.getElementById('lockInput');
+      var erro = document.getElementById('lockError');
+
+      if (campo.value === SENHA_APP) {
+        document.body.classList.remove('locked');
+        document.getElementById('lockScreen').style.display = 'none';
+        erro.style.display = 'none';
+        campo.value = '';
+      } else {
+        erro.style.display = 'block';
+        campo.value = '';
+        campo.focus();
+      }
+    }
+
+    document.getElementById('lockInput').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') verificarSenha();
+    });
+
     function carregarExemplo() {
       document.getElementById('rawMessage').value = `✦ *SOLICITACAO DE TRANSFER — RAMOS EXECUTIVE* ✦
 _Mobilidade com Elegancia_
@@ -798,4 +882,3 @@ _Aguardo a confirmação e orçamento._`;
   </script>
 </body>
 </html>
-
